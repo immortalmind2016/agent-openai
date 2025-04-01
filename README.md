@@ -16,6 +16,16 @@ This project is an agent that can execute SQL commands in a database. It uses th
 - Python 3.8 or higher
 - LangChain library
 
+## Database tables
+
+- The database should have the following tables:
+  - `users`: A table to store user information.
+  - `orders`: A table to store order information.
+  - `products`: A table to store product information.
+  - `order_products`: A table to store the relationship between orders and products.
+  - `addresses`: A table to store address information.
+  - `carts`: A table to store cart information.
+
 ## Installation
 
 1. Clone the repository:
