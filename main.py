@@ -10,12 +10,14 @@ from dotenv import load_dotenv
 from langchain.schema import SystemMessage
 from tools.report import write_report_tool
 from langchain.memory import ConversationBufferMemory
-
+from handlers.chat_model_start_handler import ChatModelStartHandler
 from tools.sql import run_query_tool,list_tables,describe_tables_tool
 
 load_dotenv()
 
-chat = ChatOpenAI()
+chat = ChatOpenAI(
+    callbacks=[ChatModelStartHandler()],
+)
 
 tables = list_tables()
 prompt = ChatPromptTemplate(
@@ -47,7 +49,7 @@ agent = OpenAIFunctionsAgent(
 
 agent_executor = AgentExecutor(
     agent=agent,
-    verbose=True,
+    # verbose=True,
     tools=tools,
     memory=memory
 )
