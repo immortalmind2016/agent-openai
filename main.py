@@ -9,42 +9,46 @@ from langchain.prompts import (
 from langchain.agents import OpenAIFunctionsAgent, AgentExecutor
 from dotenv import load_dotenv
 from langchain.schema import SystemMessage
+from tools.report import write_report_tool
 
 
-from tools.sql import run_query_tool,describe_table_tool
+from tools.sql import run_query_tool,list_tables,describe_tables_tool
 
 load_dotenv()
 
-chat=ChatOpenAI()
+chat = ChatOpenAI()
 
-def list_tables() -> str:
-    c=conn.cursor()
-    c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    row = c.fetchall()
-    return "\n".join([table[0] for table in row])
+tables = list_tables()
 prompt = ChatPromptTemplate(
     messages=[
-        SystemMessage("You are a SQL expert. You can run SQL queries on the example.db database.\n"
-                      f"the database has the following tables: {list_tables()}\n"
-                      "Don't make assumptions about the table names."
-                      "If you need to know the table structure, use the 'describe_table' function."),
+        SystemMessage(content=(
+            "You are an AI that has access to a SQLite database.\n"
+            f"The database has tables of: {tables}\n"
+            "Do not make any assumptions about what tables exist "
+            "or what columns exist. Instead, use the 'describe_tables' function"
+        )),
         HumanMessagePromptTemplate.from_template("{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad")
     ]
-
 )
-tools=[run_query_tool,describe_table_tool]
-agent=OpenAIFunctionsAgent(
+
+tools = [
+    run_query_tool,
+    describe_tables_tool,
+    write_report_tool
+]
+
+agent = OpenAIFunctionsAgent(
     llm=chat,
-    tools=[run_query_tool],
     prompt=prompt,
-    verbose=True
+    tools=tools
 )
 
 agent_executor = AgentExecutor(
     agent=agent,
-    tools=[run_query_tool],
-    verbose=True
+    verbose=True,
+    tools=tools
 )
 
-agent_executor.run("How many users are there in the database?")
+agent_executor("Summarize the top 5 most popular products. Write the results to a report file.")
+# agent_executor("how many users are there?")

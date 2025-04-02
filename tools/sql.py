@@ -5,6 +5,12 @@ from typing import List
 
 conn = sqlite3.connect('db.sqlite')
 
+def list_tables():
+    c = conn.cursor()
+    c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    rows = c.fetchall()
+    return "\n".join(row[0] for row in rows if row[0] is not None)
+
 def run_sql_query(query: str) -> str:
     c=conn.cursor()
     try:
@@ -24,18 +30,20 @@ run_query_tool = Tool.from_function(
     description="Run a SQL query on the example.db database. The query should be a valid SQL statement.",
 )
 
-def describe_table(tables_name) -> str:
-    c=conn.cursor()
-    tables=', '.join("'"+table[0]+"'" for table in tables_name)
-    rows =c.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name IN ({tables});")
-    return '\n'.join([row[0] for row in rows if row[0] is not None])
+def describe_tables(table_names):
+    c = conn.cursor()
+    tables = ', '.join("'" + table + "'" for table in table_names)
+    rows = c.execute(f"SELECT sql FROM sqlite_master WHERE type='table' and name IN ({tables});")
+    return '\n'.join(row[0] for row in rows if row[0] is not None)
+
 
 class DescribeTablesArgsSchema(BaseModel):
     tables_names: List[str]
-    
-describe_table_tool = Tool.from_function(
-    func=describe_table,
-    name="describe_table",
-    args_schema=DescribeTablesArgsSchema,
-    description="Describe the table structure of the example.db database. The table name should be a valid SQL statement.",
+
+
+describe_tables_tool = Tool.from_function(
+    name="describe_tables",
+    description="Given a list of table names, returns the schema of those tables",
+    func=describe_tables,
+    args_schema=DescribeTablesArgsSchema
 )
